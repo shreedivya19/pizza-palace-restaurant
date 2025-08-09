@@ -39,7 +39,7 @@ A comprehensive restaurant management game where you serve customers, manage ord
 
 ## 🚀 Live Demo
 
-**[Play Pizza Palace Now!](https://yourusername.github.io/pizza-palace-restaurant)**
+**[Play Pizza Palace Now!](https://shreedivya19.github.io/pizza-palace-restaurant)**
 
 ## 💡 Game Tips
 
@@ -53,6 +53,6 @@ A comprehensive restaurant management game where you serve customers, manage ord
 ## 🛠️ Local Development
 
 ```bash
-git clone https://github.com/yourusername/pizza-palace-restaurant.git
+git clone https://github.com/shreedivya19/pizza-palace-restaurant.git
 cd pizza-palace-restaurant
 # Open index.html in browser or use Live Server

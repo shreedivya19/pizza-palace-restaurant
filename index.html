@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizza Palace Restaurant Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            grid-template-rows: 80px 1fr;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border-radius: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            color: white;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .logo {
+            font-size: 2em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            font-size: 1.1em;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Restaurant Area */
+        .restaurant-area {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .restaurant-floor {
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    #f8f9fa,
+                    #f8f9fa 20px,
+                    #e9ecef 20px,
+                    #e9ecef 40px
+                );
+            border-radius: 10px;
+            position: relative;
+        }
+
+        /* Customer Queue */
+        .customer-queue {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 120px;
+            background: rgba(108, 117, 125, 0.1);
+            border-radius: 10px;
+            border: 2px dashed #6c757d;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 15px;
+            overflow-x: auto;
+        }
+
+        .customer {
+            min-width: 80px;
+            height: 100px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: customerBounce 2s infinite;
+            background: none;
+        }
+
+        .customer:hover {
+            transform: scale(1.05);
+        }
+
+        .customer.selected {
+            border: 3px solid #007bff;
+            border-radius: 10px;
+            background: rgba(0,123,255,0.1);
+        }
+
+        /* Realistic Human Customers */
+        .customer-avatar {
+            width: 60px;
+            height: 80px;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        /* Head */
+        .customer-head {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fdbcb4;
+        }
+
+        /* Eyes and mouth for different moods */
+        .customer-head::before {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #333;
+            border-radius: 50%;
+            top: 12px;
+            left: 9px;
+            box-shadow: 12px 0 0 #333;
+        }
+
+        .customer.happy .customer-head::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 4px;
+            background: #e74c3c;
+            border-radius: 0 0 8px 8px;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 1px solid #c0392b;
+        }
+
+        .customer.waiting .customer-head::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 2px;
+            background: #f39c12;
+            border-radius: 2px;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .customer.angry .customer-head::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 4px;
+            background: #e74c3c;
+            border-radius: 8px 8px 0 0;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Hair styles */
+        .customer-hair {
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 20px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .hair-brown { background: #8B4513; }
+        .hair-blonde { background: #DAA520; }
+        .hair-black { background: #2F4F4F; }
+        .hair-red { background: #CD5C5C; }
+
+        /* Body */
+        .customer-body {
+            width: 30px;
+            height: 40px;
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 5px 5px 0 0;
+        }
+
+        .shirt-red { background: #e74c3c; }
+        .shirt-blue { background: #3498db; }
+        .shirt-green { background: #2ecc71; }
+        .shirt-purple { background: #9b59b6; }
+        .shirt-orange { background: #e67e22; }
+
+        /* Arms */
+        .customer-arms {
+            position: absolute;
+            top: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 8px;
+            background: #fdbcb4;
+            border-radius: 4px;
+        }
+
+        /* Legs */
+        .customer-legs {
+            position: absolute;
+            top: 65px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 20px;
+            background: #2c3e50;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .customer-legs::after {
+            content: '';
+            position: absolute;
+            left: 15px;
+            width: 8px;
+            height: 20px;
+            background: #2c3e50;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .customer.angry {
+            animation: customerShake 0.5s infinite;
+        }
+
+        .customer-order {
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 5px 8px;
+            border-radius: 15px;
+            font-size: 0.7em;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            border: 2px solid #ddd;
+            z-index: 10;
+        }
+
+        /* Kitchen/Service Area */
+        .service-counter {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            height: 100px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .preparation-area {
+            position: absolute;
+            top: 140px;
+            left: 20px;
+            right: 20px;
+            bottom: 160px;
+            background: rgba(248, 249, 250, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-content: flex-start;
+            overflow-y: auto;
+        }
+
+        .food-item {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.7em;
+            text-align: center;
+            position: relative;
+            border: 2px solid transparent;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .food-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .panel-section h3 {
+            margin-bottom: 15px;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 5px;
+        }
+
+        .current-order {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+            min-height: 80px;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .order-total {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #28a745;
+            text-align: right;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #dee2e6;
+        }
+
+        .action-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin: 5px 0;
+            font-size: 1em;
+        }
+
+        .serve-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .clear-btn {
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+            color: white;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Food Item Styles */
+        .pizza { background: linear-gradient(45deg, #ff6b47, #ff8c42); }
+        .burger { background: linear-gradient(45deg, #8B4513, #A0522D); }
+        .fries { background: linear-gradient(45deg, #ffd43b, #ff922b); }
+        .drink { background: linear-gradient(45deg, #228be6, #1c7ed6); }
+        .dessert { background: linear-gradient(45deg, #f783ac, #e64980); }
+        .salad { background: linear-gradient(45deg, #51cf66, #37b24d); }
+
+        /* Animations */
+        @keyframes customerBounce {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes customerShake {
+            0%, 100% { transform: translateX(0px); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        /* Notification System */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            transform: translateX(400px);
+            transition: transform 0.5s ease;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+        }
+
+        /* Welcome message */
+        .welcome-msg {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .game-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 80px 60vh 40vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header class="header">
+            <div class="logo">🍕 Pizza Palace</div>
+            <div class="stats">
+                <div class="stat">
+                    <span>💰</span>
+                    <span>$<span id="money">50</span></span>
+                </div>
+                <div class="stat">
+                    <span>😊</span>
+                    <span id="satisfaction">100%</span>
+                </div>
+                <div class="stat">
+                    <span>📋</span>
+                    <span id="ordersServed">0</span> Orders
+                </div>
+                <div class="stat">
+                    <span>⏰</span>
+                    <span id="gameTime">00:00</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="restaurant-area">
+            <div class="restaurant-floor">
+                <div class="service-counter">
+                    🍕 Kitchen & Service Counter 🍕<br>
+                    <small style="font-size: 0.8em;">Click on customers to take orders, then click food items to prepare them!</small>
+                </div>
+                
+                <div class="preparation-area" id="preparationArea">
+                    <div class="food-item pizza" data-item="margherita" data-price="12">
+                        <div style="font-size: 1.8em;">🍕</div>
+                        <div>Margherita<br>$12</div>
+                    </div>
+                    <div class="food-item pizza" data-item="pepperoni" data-price="14">
+                        <div style="font-size: 1.8em;">🍕</div>
+                        <div>Pepperoni<br>$14</div>
+                    </div>
+                    <div class="food-item pizza" data-item="supreme" data-price="16">
+                        <div style="font-size: 1.8em;">🍕</div>
+                        <div>Supreme<br>$16</div>
+                    </div>
+                    <div class="food-item burger" data-item="cheeseburger" data-price="8">
+                        <div style="font-size: 1.8em;">🍔</div>
+                        <div>Cheeseburger<br>$8</div>
+                    </div>
+                    <div class="food-item fries" data-item="fries" data-price="4">
+                        <div style="font-size: 1.8em;">🍟</div>
+                        <div>French Fries<br>$4</div>
+                    </div>
+                    <div class="food-item fries" data-item="onion-rings" data-price="5">
+                        <div style="font-size: 1.8em;">🧅</div>
+                        <div>Onion Rings<br>$5</div>
+                    </div>
+                    <div class="food-item drink" data-item="coke" data-price="3">
+                        <div style="font-size: 1.8em;">🥤</div>
+                        <div>Coca Cola<br>$3</div>
+                    </div>
+                    <div class="food-item drink" data-item="sprite" data-price="3">
+                        <div style="font-size: 1.8em;">🥤</div>
+                        <div>Sprite<br>$3</div>
+                    </div>
+                    <div class="food-item drink" data-item="orange-juice" data-price="4">
+                        <div style="font-size: 1.8em;">🧃</div>
+                        <div>Orange Juice<br>$4</div>
+                    </div>
+                    <div class="food-item dessert" data-item="ice-cream" data-price="5">
+                        <div style="font-size: 1.8em;">🍦</div>
+                        <div>Ice Cream<br>$5</div>
+                    </div>
+                    <div class="food-item dessert" data-item="cheesecake" data-price="6">
+                        <div style="font-size: 1.8em;">🍰</div>
+                        <div>Cheesecake<br>$6</div>
+                    </div>
+                </div>
+
+                <div class="customer-queue" id="customerQueue">
+                    <div class="welcome-msg">
+                        Welcome to Pizza Palace! 🍕<br>
+                        <small>Customers will arrive automatically. Click on them to take their orders!</small>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <div class="panel-section">
+                <h3>👨‍🍳 Current Order</h3>
+                <div class="current-order" id="currentOrder">
+                    <div style="color: #6c757d; font-style: italic; text-align: center;">
+                        Click on a customer to see their order
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>🎯 Actions</h3>
+                <button class="action-btn serve-btn" onclick="serveOrder()" id="serveBtn" disabled>
+                    Serve Order ($0.00)
+                </button>
+                <button class="action-btn clear-btn" onclick="clearOrder()">
+                    Clear Selection
+                </button>
+            </div>
+
+            <div class="panel-section">
+                <h3>📊 Statistics</h3>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 0.9em;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Daily Revenue:</span>
+                        <span>$<span id="dailyRevenue">0</span></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Happy Customers:</span>
+                        <span id="happyCustomers">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Customer Rating:</span>
+                        <span id="customerRating">5.0</span>⭐
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>🎮 Game Controls</h3>
+                <button class="action-btn" style="background: linear-gradient(45deg, #6f42c1, #e83e8c);" onclick="pauseGame()" id="pauseBtn">
+                    Pause Game
+                </button>
+                <button class="action-btn" style="background: linear-gradient(45deg, #fd7e14, #ffc107);" onclick="resetGame()">
+                    New Game
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Game State
+        let gameState = {
+            money: 50,
+            satisfaction: 100,
+            ordersServed: 0,
+            gameTime: 0,
+            customers: [],
+            dailyRevenue: 0,
+            happyCustomers: 0,
+            customerRating: 5.0,
+            isPaused: false,
+            gameStartTime: Date.now(),
+            selectedCustomer: null
+        };
+
+        // Customer names and appearance data
+        const customerNames = [
+            "Alex Johnson", "Sarah Williams", "Mike Chen", "Emma Davis", 
+            "James Wilson", "Lisa Anderson", "David Brown", "Maria Garcia",
+            "Tom Miller", "Jessica Taylor", "Chris Martinez", "Ashley Jones",
+            "Ryan Clark", "Amanda White", "Kevin Lee", "Nicole Thompson"
+        ];
+
+        const hairStyles = ['hair-brown', 'hair-blonde', 'hair-black', 'hair-red'];
+        const shirtStyles = ['shirt-red', 'shirt-blue', 'shirt-green', 'shirt-purple', 'shirt-orange'];
+
+        // Menu items with prices and emojis
+        const menuItems = {
+            "margherita": { name: "Margherita Pizza", price: 12, emoji: "🍕" },
+            "pepperoni": { name: "Pepperoni Pizza", price: 14, emoji: "🍕" },
+            "supreme": { name: "Supreme Pizza", price: 16, emoji: "🍕" },
+            "cheeseburger": { name: "Cheeseburger", price: 8, emoji: "🍔" },
+            "fries": { name: "French Fries", price: 4, emoji: "🍟" },
+            "onion-rings": { name: "Onion Rings", price: 5, emoji: "🧅" },
+            "coke": { name: "Coca Cola", price: 3, emoji: "🥤" },
+            "sprite": { name: "Sprite", price: 3, emoji: "🥤" },
+            "orange-juice": { name: "Orange Juice", price: 4, emoji: "🧃" },
+            "ice-cream": { name: "Ice Cream", price: 5, emoji: "🍦" },
+            "cheesecake": { name: "Cheesecake", price: 6, emoji: "🍰" }
+        };
+
+        // Customer class
+        class Customer {
+            constructor() {
+                this.name = customerNames[Math.floor(Math.random() * customerNames.length)];
+                this.order = this.generateOrder();
+                this.patience = 60 + Math.random() * 30; // 60-90 seconds
+                this.maxPatience = this.patience;
+                this.arrivalTime = Date.now();
+                this.mood = 'happy';
+                this.element = this.createElement();
+            }
+
+            generateOrder() {
+                const order = [];
+                const mainItems = ['margherita', 'pepperoni', 'supreme', 'cheeseburger'];
+                const sideItems = ['fries', 'onion-rings'];
+                const drinkItems = ['coke', 'sprite', 'orange-juice'];
+                const dessertItems = ['ice-cream', 'cheesecake'];
+
+                // Always add a main item
+                order.push(mainItems[Math.floor(Math.random() * mainItems.length)]);
+
+                // 70% chance for a drink
+                if (Math.random() < 0.7) {
+                    order.push(drinkItems[Math.floor(Math.random() * drinkItems.length)]);
+                }
+
+                // 50% chance for sides
+                if (Math.random() < 0.5) {
+                    order.push(sideItems[Math.floor(Math.random() * sideItems.length)]);
+                }
+
+                // 30% chance for dessert
+                if (Math.random() < 0.3) {
+                    order.push(dessertItems[Math.floor(Math.random() * dessertItems.length)]);
+                }
+
+                return order;
+            }
+
+            createElement() {
+                const customer = document.createElement('div');
+                customer.className = 'customer happy';
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'customer-avatar';
+                
+                const hair = document.createElement('div');
+                hair.className = `customer-hair ${hairStyles[Math.floor(Math.random() * hairStyles.length)]}`;
+                
+                const head = document.createElement('div');
+                head.className = 'customer-head';
+                
+                const body = document.createElement('div');
+                body.className = `customer-body ${shirtStyles[Math.floor(Math.random() * shirtStyles.length)]}`;
+                
+                const arms = document.createElement('div');
+                arms.className = 'customer-arms';
+                
+                const legs = document.createElement('div');
+                legs.className = 'customer-legs';
+                
+                avatar.appendChild(hair);
+                avatar.appendChild(head);
+                avatar.appendChild(body);
+                avatar.appendChild(arms);
+                avatar.appendChild(legs);
+                
+                const orderDiv = document.createElement('div');
+                orderDiv.className = 'customer-order';
+                orderDiv.innerHTML = this.order.map(item => menuItems[item].emoji).join(' ');
+                
+                customer.appendChild(avatar);
+                customer.appendChild(orderDiv);
+                
+                customer.onclick = () => this.selectCustomer();
+                
+                return customer;
+            }
+
+            selectCustomer() {
+                // Clear other selections
+                document.querySelectorAll('.customer').forEach(c => c.classList.remove('selected'));
+                this.element.classList.add('selected');
+                
+                gameState.selectedCustomer = this;
+                showNotification(`Taking order from ${this.name}!`);
+                this.showOrderDetails();
+            }
+
+            showOrderDetails() {
+                const orderDiv = document.getElementById('currentOrder');
+                let html = `<div style="margin-bottom: 15px; font-weight: bold; color: #333;">${this.name}'s Order:</div>`;
+                let total = 0;
+
+                this.order.forEach(itemKey => {
+                    const item = menuItems[itemKey];
+                    total += item.price;
+                    html += `
+                        <div class="order-item">
+                            <span>${item.emoji} ${item.name}</span>
+                            <span style="color: #28a745; font-weight: bold;">$${item.price}</span>
+                        </div>
+                    `;
+                });
+
+                html += `<div class="order-total">Total: $${total.toFixed(2)}</div>`;
+                orderDiv.innerHTML = html;
+
+                document.getElementById('serveBtn').disabled = false;
+                document.getElementById('serveBtn').textContent = `Serve Order ($${total.toFixed(2)})`;
+            }
+
+            updatePatience() {
+                this.patience -= 1;
+                const patiencePercent = this.patience / this.maxPatience;
+
+                if (patiencePercent > 0.6) {
+                    this.mood = 'happy';
+                    this.element.className = 'customer happy' + (gameState.selectedCustomer === this ? ' selected' : '');
+                } else if (patiencePercent > 0.3) {
+                    this.mood = 'waiting';
+                    this.element.className = 'customer waiting' + (gameState.selectedCustomer === this ? ' selected' : '');
+                } else {
+                    this.mood = 'angry';
+                    this.element.className = 'customer angry' + (gameState.selectedCustomer === this ? ' selected' : '');
+                }
+
+                if (this.patience <= 0) {
+                    this.leave();
+                }
+            }
+
+            leave() {
+                const index = gameState.customers.indexOf(this);
+                if (index > -1) {
+                    gameState.customers.splice(index, 1);
+                    this.element.remove();
+                    
+                    if (gameState.selectedCustomer === this) {
+                        clearOrder();
+                    }
+
+                    gameState.satisfaction = Math.max(0, gameState.satisfaction - 15);
+                    gameState.customerRating = Math.max(1.0, gameState.customerRating - 0.2);
+                    showNotification(`${this.name} left angry! 😠`, 'error');
+                    updateDisplay();
+                }
+            }
+
+            serve() {
+                let total = 0;
+                this.order.forEach(itemKey => {
+                    total += menuItems[itemKey].price;
+                });
+
+                gameState.money += total;
+                gameState.dailyRevenue += total;
+                gameState.ordersServed++;
+                
+                if (this.mood === 'happy') {
+                    gameState.happyCustomers++;
+                    gameState.satisfaction = Math.min(100, gameState.satisfaction + 5);
+                    gameState.customerRating = Math.min(5.0, gameState.customerRating + 0.1);
+                } else if (this.mood === 'waiting') {
+                    gameState.satisfaction = Math.min(100, gameState.satisfaction + 2);
+                    gameState.customerRating = Math.min(5.0, gameState.customerRating + 0.02);
+                }
+
+                // Remove customer from queue
+                const index = gameState.customers.indexOf(this);
+                if (index > -1) {
+                    gameState.customers.splice(index, 1);
+                    this.element.remove();
+                }
+
+                showNotification(`Order served to ${this.name}! +${total.toFixed(2)} 💰`);
+                updateDisplay();
+            }
+        }
+
+        // Game Functions
+        function addCustomer() {
+            if (gameState.customers.length < 6 && !gameState.isPaused) {
+                const customer = new Customer();
+                gameState.customers.push(customer);
+                
+                const queue = document.getElementById('customerQueue');
+                // Remove welcome message if it exists
+                const welcomeMsg = queue.querySelector('.welcome-msg');
+                if (welcomeMsg) {
+                    welcomeMsg.remove();
+                }
+                
+                queue.appendChild(customer.element);
+                showNotification(`${customer.name} entered the restaurant!`);
+            }
+        }
+
+        function updateCustomers() {
+            if (!gameState.isPaused) {
+                gameState.customers.forEach(customer => {
+                    customer.updatePatience();
+                });
+            }
+        }
+
+        function serveOrder() {
+            if (gameState.selectedCustomer) {
+                gameState.selectedCustomer.serve();
+                clearOrder();
+            }
+        }
+
+        function clearOrder() {
+            gameState.selectedCustomer = null;
+            
+            // Remove selection from all customers
+            document.querySelectorAll('.customer').forEach(c => c.classList.remove('selected'));
+            
+            document.getElementById('currentOrder').innerHTML = 
+                '<div style="color: #6c757d; font-style: italic; text-align: center;">Click on a customer to see their order</div>';
+            document.getElementById('serveBtn').disabled = true;
+            document.getElementById('serveBtn').textContent = 'Serve Order ($0.00)';
+        }
+
+        function updateDisplay() {
+            document.getElementById('money').textContent = Math.floor(gameState.money);
+            document.getElementById('satisfaction').textContent = Math.floor(gameState.satisfaction) + '%';
+            document.getElementById('ordersServed').textContent = gameState.ordersServed;
+            document.getElementById('dailyRevenue').textContent = Math.floor(gameState.dailyRevenue);
+            document.getElementById('happyCustomers').textContent = gameState.happyCustomers;
+            document.getElementById('customerRating').textContent = gameState.customerRating.toFixed(1);
+        }
+
+        function updateGameTime() {
+            if (!gameState.isPaused) {
+                const elapsed = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('gameTime').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification ' + (type === 'error' ? 'error' : '');
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function pauseGame() {
+            gameState.isPaused = !gameState.isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            
+            if (gameState.isPaused) {
+                pauseBtn.textContent = 'Resume Game';
+                showNotification('Game Paused', 'error');
+            } else {
+                pauseBtn.textContent = 'Pause Game';
+                gameState.gameStartTime = Date.now() - (gameState.gameTime * 1000);
+                showNotification('Game Resumed');
+            }
+        }
+
+        function resetGame() {
+            // Clear all customers
+            gameState.customers.forEach(customer => customer.element.remove());
+            gameState.customers = [];
+            
+            // Reset game state
+            gameState = {
+                money: 50,
+                satisfaction: 100,
+                ordersServed: 0,
+                gameTime: 0,
+                customers: [],
+                dailyRevenue: 0,
+                happyCustomers: 0,
+                customerRating: 5.0,
+                isPaused: false,
+                gameStartTime: Date.now(),
+                selectedCustomer: null
+            };
+            
+            clearOrder();
+            updateDisplay();
+            
+            // Add welcome message back
+            const queue = document.getElementById('customerQueue');
+            const welcomeMsg = document.createElement('div');
+            welcomeMsg.className = 'welcome-msg';
+            welcomeMsg.innerHTML = `
+                Welcome to Pizza Palace! 🍕<br>
+                <small>Customers will arrive automatically. Click on them to take their orders!</small>
+            `;
+            queue.appendChild(welcomeMsg);
+            
+            showNotification('New Game Started! Good luck! 🍀');
+            
+            // Reset pause button
+            document.getElementById('pauseBtn').textContent = 'Pause Game';
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click listeners to food items (for visual feedback)
+            document.querySelectorAll('.food-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    // Visual feedback when clicking food items
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                    
+                    const itemName = menuItems[this.dataset.item].name;
+                    const itemPrice = this.dataset.price;
+                    showNotification(`Prepared ${itemName}! 👨‍🍳`);
+                });
+            });
+
+            // Start the game
+            updateDisplay();
+            
+            // Game intervals
+            setInterval(() => {
+                updateCustomers();
+                updateGameTime();
+            }, 1000);
+            
+            // Add customers periodically
+            setInterval(() => {
+                if (Math.random() < 0.3) { // 30% chance every 3 seconds
+                    addCustomer();
+                }
+            }, 3000);
+            
+            // Add first customer after 2 seconds
+            setTimeout(() => {
+                addCustomer();
+            }, 2000);
+            
+            showNotification('Welcome to Pizza Palace! Your restaurant is now open! 🍕');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameState.selectedCustomer && !document.getElementById('serveBtn').disabled) {
+                    serveOrder();
+                }
+            } else if (e.code === 'Escape') {
+                clearOrder();
+            } else if (e.code === 'KeyP') {
+                pauseGame();
+            }
+        });
+    </script>
+</body>
+</html>
